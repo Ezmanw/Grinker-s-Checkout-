@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Checkout</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+:root {
+  /* Dark Green M3 Expressive */
+  --md-sys-color-primary: #81C784;
+  --md-sys-color-on-primary: #003314;
+  --md-sys-color-primary-container: #005024;
+  --md-sys-color-on-primary-container: #A3F9A6;
+  
+  --md-sys-color-secondary: #A5D6A7;
+  --md-sys-color-on-secondary: #0D3915;
+  --md-sys-color-secondary-container: #25502A;
+  --md-sys-color-on-secondary-container: #C0F3C1;
+  
+  --md-sys-color-background: #0D1610;
+  --md-sys-color-on-background: #E1E3DF;
+  
+  --md-sys-color-surface: #101B13;
+  --md-sys-color-on-surface: #E1E3DF;
+  --md-sys-color-surface-variant: #414942;
+  --md-sys-color-on-surface-variant: #C1C9BF;
+  
+  --md-sys-color-outline: #8B938A;
+
+  --shape-small: 12px;
+  --shape-medium: 20px;
+  --shape-large: 28px;
+  --shape-extra-large: 36px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  font-size: 1.125rem;
+  display: flex; min-height: 100vh; overflow: hidden;
+}
+
+h1, h2, h3, h4 { font-weight: 600; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+/* Views */
+.view {
+  position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.view.active { display: flex; }
+
+/* Welcome Screen */
+#welcome-screen {
+  background-color: var(--md-sys-color-background);
+  text-align: center; cursor: pointer;
+}
+/* Infinity Scrolling Marquee for Welcome M3 */
+.marquee-container {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  max-width: 1600px;
+  margin: 64px auto;
+  gap: 24px;
+  /* Smooth edge fade out using CSS masks! */
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-content {
+  display: flex;
+  gap: 24px;
+  min-width: 100%;
+  animation: scroll-left 35s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.grocery-item {
+  width: 160px; height: 160px; border-radius: var(--shape-large);
+  background: var(--md-sys-color-surface-variant); display: flex; align-items: center; justify-content: center;
+  font-size: 80px; flex-shrink: 0;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+}
+
+/* PC Layout */
+.pc-layout {
+  display: grid; grid-template-columns: 2fr 1fr; width: 100%; height: 100vh; gap: 24px; padding: 24px;
+}
+
+.card {
+  background-color: var(--md-sys-color-surface); border-radius: var(--shape-large);
+  padding: 24px; display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  position: relative; overflow: hidden;
+}
+.card-primary { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+
+button {
+  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 1.125rem;
+  border: none; border-radius: 100px; padding: 16px 24px;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.2s, background 0.2s;
+}
+.btn-filled { background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+.btn-filled:hover { background-color: #6eb371; }
+.btn-filled:active { transform: scale(0.96); }
+.btn-tonal { background-color: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.btn-tonal:hover { background-color: #1e4222; }
+
+/* PC Left Panel components */
+.left-main-area {
+  flex: 1; border-radius: var(--shape-large); background-color: black;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  position: relative; overflow: hidden; margin-top: 16px;
+}
+
+#reader {
+  position: absolute; top:0; left:0; width:100%; height:100%; display:none; background: black;
+}
+#reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; border-radius: var(--shape-large); }
+/* Make html5-qrcode UI invisible */
+#reader__dashboard_section_csr span { color: transparent !important; }
+#qr-shaded-region { display: none !important; }
+
+#scanned-item-display {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; z-index: 2; color: white;
+}
+.placeholder-img {
+  width: 200px; height: 200px; background: var(--md-sys-color-surface-variant); border-radius: var(--shape-medium);
+  display: flex; justify-content: center; align-items: center; font-size: 80px; box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+}
+
+.cart-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid var(--md-sys-color-surface-variant);
+}
+.cart-item:last-child { border-bottom: none; }
+
+/* Mobile Layout */
+.mobile-layout {
+  display: flex; flex-direction: column; width: 100%; height: 100vh; max-width: 600px; overflow: hidden; margin: 0 auto;
+}
+.top-app-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; background-color: var(--md-sys-color-surface); z-index: 5;
+}
+.scroll-list {
+  display: flex; flex-direction: column; gap: 16px; padding: 16px; flex-grow: 1; overflow-y: auto;
+}
+.barcode-card { cursor: pointer; display: flex; flex-direction: column; gap: 12px; }
+
+input[type="text"], input[type="number"], input[type="search"] {
+  font-family: inherit; font-size: 1.125rem; padding: 16px; width: 100%;
+  border-radius: 16px; border: 1px solid var(--md-sys-color-outline);
+  background: var(--md-sys-color-background); color: var(--md-sys-color-on-background);
+}
+
+/* Dialogs */
+.dialog-backdrop {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.8);
+  display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.dialog-backdrop.open { opacity: 1; pointer-events: auto; }
+.dialog {
+  background-color: var(--md-sys-color-surface); border-radius: var(--shape-extra-large);
+  padding: 32px; width: 90%; max-width: 440px; box-shadow: 0 16px 32px rgba(0,0,0,0.6);
+  transform: scale(0.9); transition: transform 0.3s; display: flex; flex-direction: column; gap: 24px;
+}
+.dialog-backdrop.open .dialog { transform: scale(1); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 12px; }
+
+/* Fullscreen payment success anim */
+@keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+.pop-anim { animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+.status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 100px; font-weight: 600; font-size: 1rem; }
+.status-connected { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+.status-disconnected { background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+
+.fab {
+  border-radius: var(--shape-large); width: 72px; height: 72px;
+  position: fixed; bottom: 24px; right: 24px; background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);
+  z-index: 10; box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+}
+.fab:hover { transform: scale(1.05); }
+
+/* Remove previous QR stuff */
+.qr-container { background: white; padding: 16px; border-radius: 16px; }
+
+.history-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px; background: var(--md-sys-color-surface-variant); border-radius: var(--shape-medium);
+  margin-bottom: 8px; cursor: pointer;
+}
+.history-item:hover { background: var(--md-sys-color-outline); }
+
+/* Fullscreen Barcode perfectly rotated */
+.fullscreen-barcode {
+  position: fixed; top: 0; left: 0; 
+  width: 100vw; height: 100vh;
+  background: white; z-index: 9999;
+  display: flex; justify-content: center; align-items: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
+}
+.fullscreen-barcode.open { opacity: 1; pointer-events: auto; }
+
+.fs-rotate { 
+  width: 100%; height: 100%;
+  padding: 16px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+
+#fs-svg-barcode {
+  max-width: 85%;
+  height: auto;
+}
+
+</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+
+  <!-- Welcome View -->
+  <div id="welcome-view" class="view active" onclick="startCheckout()">
+    <h1 style="font-size: 7rem; color: var(--md-sys-color-primary); margin-bottom: 24px;">Welcome to Grinkers!</h1>
+    
+    <div class="marquee-container">
+      <div class="marquee-content" id="marquee-p1"></div>
+      <div class="marquee-content" id="marquee-p2"></div>
+    </div>
+    
+    <script>
+      const emojis = ['🍎','🥖','🥑','🧀','🥩','🥦','🥪','🥐','🍉','🍣','🍔','🍕','🌮','🍩','🥨','🥫','🍗','🍙','🍿','🥓'];
+      const shuffled = emojis.sort(() => 0.5 - Math.random());
+      const htmlStr = shuffled.map(e => `<div class="grocery-item">${e}</div>`).join('');
+      document.getElementById('marquee-p1').innerHTML = htmlStr;
+      document.getElementById('marquee-p2').innerHTML = htmlStr;
+    </script>
+    
+    <p style="font-size: 2.5rem; opacity: 0.8; margin-top: 64px; animation: pulse 2s infinite;">Press anywhere to start checking out...</p>
+  </div>
+
+  <!-- Checkout View -->
+  <div id="checkout-view" class="view" style="justify-content: flex-start; background: var(--md-sys-color-background);">
+    <div class="pc-layout">
+      <!-- Left Column: Scanner Area -->
+      <div class="card card-primary" style="flex: 1; display:flex; flex-direction:column;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>Scanner</h2>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <span id="pc-code-display" style="font-family: monospace; font-size: 1.5rem; font-weight: bold; opacity: 0; letter-spacing: 2px; transition: opacity 0.3s;">Code: ----</span>
+            <div id="pc-connection-status" class="status-badge status-disconnected">
+              <span class="material-symbols-outlined">cloud_off</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="left-main-area" id="main-scan-area">
+          <div id="reader"></div>
+          
+          <div id="scanned-item-display">
+            <div class="placeholder-img" id="last-img">🛒</div>
+            <h2 id="last-name" style="font-size: 2.5rem; margin-top: 16px;">Start Scanning</h2>
+            <p id="last-price" style="font-size: 1.5rem; color: var(--md-sys-color-primary);"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Cart -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--md-sys-color-surface-variant); padding-bottom: 16px;">
+          <h2><span class="material-symbols-outlined" style="vertical-align: bottom;">shopping_cart</span> Cart</h2>
+          <span id="item-count" style="font-weight: 700; font-size: 1.5rem; color: var(--md-sys-color-primary);">0 items</span>
+        </div>
+        
+        <div id="cart-items" style="flex: 1; overflow-y: auto; margin: 16px 0; padding-right: 8px;">
+          <div style="text-align: center; color: var(--md-sys-color-outline); padding: 64px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
+             <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.5;">inventory_2</span>
+             <p>Cart is empty</p>
+          </div>
+        </div>
+        
+        <div style="border-top: 2px solid var(--md-sys-color-surface-variant); padding-top: 24px;">
+          <div style="display: flex; justify-content: space-between; font-size: 1.75rem; font-weight: 700; margin-bottom: 24px;">
+            <span>Total</span>
+            <span id="cart-total">$0.00</span>
+          </div>
+          <button class="btn-filled" style="width: 100%; font-size: 1.5rem; padding: 20px;" id="btn-checkout" disabled>
+            Checkout <span class="material-symbols-outlined">payment</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Overlay (Triggered by 'J') -->
+  <div class="dialog-backdrop" id="qr-dialog">
+    <div class="dialog" style="align-items: center; text-align: center;">
+      <h2 style="font-size: 1.75rem;">Connection QR</h2>
+      <p style="opacity: 0.8; margin-bottom: 16px;">Scan with native phone camera</p>
+      <div id="j-qr-container" style="background: white; padding: 16px; border-radius: 16px;"></div>
+      <div class="dialog-actions" style="margin-top: 24px; width: 100%; justify-content: center;">
+        <button class="btn-tonal" onclick="document.getElementById('qr-dialog').classList.remove('open')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success View -->
+  <div id="success-view" class="view" style="background-color: var(--md-sys-color-primary-container);">
+    <div class="pop-anim" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+      <span class="material-symbols-outlined" style="font-size: 120px; color: var(--md-sys-color-on-primary-container); margin-bottom: 32px;">task_alt</span>
+      <h1 style="font-size: 4rem; color: var(--md-sys-color-on-primary-container);">Payment Successful!</h1>
+      <p style="font-size: 1.5rem; opacity: 0.8; margin-top: 16px;">Thank you for shopping at Grinkers.</p>
+      <p style="font-size: 1.25rem; opacity: 0.6; margin-top: 48px;">Returning to welcome screen in 10s...</p>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+  </style>
+
+  <script>
+const defaultProducts = {
+  '123456789': { name: 'Premium Water', price: 2.50, emoji: '💧' },
+  '987654321': { name: 'Organic Snack Bar', price: 3.25, emoji: '🍫' },
+  '555555555': { name: 'Expressive T-Shirt', price: 24.99, emoji: '👕' },
+  '777777777': { name: 'Cool Sticker Pack', price: 4.00, emoji: '🏷️' }
+};
+
+// Initialize DB in LocalStorage so both devices share it
+if (!localStorage.getItem('grinkers_db')) {
+  localStorage.setItem('grinkers_db', JSON.stringify(defaultProducts));
+}
+function getDB() { return JSON.parse(localStorage.getItem('grinkers_db')); }
+
+let cart = JSON.parse(localStorage.getItem('grinkers_cart')) || [];
+let peer = null;
+let currentConnection = null;
+let html5QrCode = null;
+let pcId = '';
+let cameraActive = false;
+let successTimeout = null;
+
+const cartEl = document.getElementById('cart-items');
+const totalEl = document.getElementById('cart-total');
+const countEl = document.getElementById('item-count');
+const btnCheckout = document.getElementById('btn-checkout');
+const connStatusEl = document.getElementById('pc-connection-status');
+const codeDisplay = document.getElementById('pc-code-display');
+
+// Views
+const welcomeView = document.getElementById('welcome-view');
+const checkoutView = document.getElementById('checkout-view');
+const successView = document.getElementById('success-view');
+
+window.startCheckout = function() {
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
+  }
+  welcomeView.classList.remove('active');
+  checkoutView.classList.add('active');
+  updateCartUI(); // Hydrates the UI with the locally saved cart on startup
+  updateScannedDisplay('Start Scanning', '', '🛒');
+  
+  // Silently initialize the scanner engine in the background instantly
+  startScannerEngine();
+};
+
+function initPeer() {
+  pcId = Math.random().toString(36).substring(2, 6).toUpperCase();
+  peer = new Peer(pcId);
+
+  peer.on('open', (id) => {
+    codeDisplay.innerText = "Code: " + id;
+    let host = window.location.host;
+    const qrContainer = document.getElementById('j-qr-container');
+    
+    // If running on localhost, storing the ID so we ask for the IP ONLY when they press J
+    if (host.includes('localhost') || host.includes('127.0.0.1')) {
+      qrContainer.dataset.peerId = id;
+    } else {
+      const url = window.location.protocol + "//" + host + "/mobile.html?peer=" + id;
+      new QRCode(qrContainer, { text: url, width: 220, height: 220, colorDark: "#000000", colorLight: "#FFFFFF" });
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'j') {
+      const qrContainer = document.getElementById('j-qr-container');
+      
+      // Prompt if they are on localhost and haven't generated the QR yet
+      if (qrContainer.dataset.peerId && !qrContainer.hasChildNodes()) {
+         const userIp = prompt("You're on 'localhost'. To generate a working mobile QR code, please enter this PC's local IP address (e.g. 192.168.1.100):");
+         if (userIp) {
+            const host = userIp + (window.location.port ? ":" + window.location.port : "");
+            const url = window.location.protocol + "//" + host + "/mobile.html?peer=" + qrContainer.dataset.peerId;
+            new QRCode(qrContainer, { text: url, width: 220, height: 220, colorDark: "#000000", colorLight: "#FFFFFF" });
+            qrContainer.dataset.peerId = ''; // Clear flag
+         } else {
+            alert("No IP entered. The QR code will be missing until you refresh or provide an IP.");
+         }
+      }
+      
+      document.getElementById('qr-dialog').classList.toggle('open');
+    } else if (e.key.toLowerCase() === 'h') {
+      const codeEl = document.getElementById('pc-code-display');
+      codeEl.style.opacity = codeEl.style.opacity === '1' ? '0' : '1';
+    }
+  });
+
+  peer.on('connection', (conn) => {
+    currentConnection = conn;
+    
+    conn.on('open', () => {
+      connStatusEl.innerHTML = '<span class="material-symbols-outlined">cloud_sync</span>';
+      connStatusEl.classList.replace('status-disconnected', 'status-connected');
+      // Send initial sync
+      conn.send({ type: 'cart_sync', cart: cart });
+    });
+
+    conn.on('data', (data) => {
+      if (data.type === 'toggle_camera') {
+        toggleCamera();
+      } else if (data.type === 'trigger_checkout') {
+        processCheckout();
+      } else if (data.type === 'db_updated' && data.db) {
+        // Deep syncing local DB instantly when mobile updates it
+        localStorage.setItem('grinkers_db', JSON.stringify(data.db));
+      }
+    });
+
+    conn.on('close', () => {
+      currentConnection = null;
+      connStatusEl.innerHTML = '<span class="material-symbols-outlined">cloud_off</span>';
+      connStatusEl.classList.replace('status-connected', 'status-disconnected');
+    });
+  });
+}
+
+function handleProductScan(decodedText) {
+  const db = getDB();
+  const product = db[decodedText] || { name: `Unknown Item (${decodedText})`, price: 5.00, emoji: '📦' };
+  cart.push(product);
+  
+  updateScannedDisplay(product.name, `$${product.price.toFixed(2)}`, product.emoji || '🛒');
+  updateCartUI();
+  
+  // Hide camera on successful scan to show product (only if it was active)
+  if(cameraActive) toggleCamera();
+}
+
+function updateScannedDisplay(name, price, emoji) {
+  document.getElementById('last-name').innerText = name;
+  document.getElementById('last-price').innerText = price;
+  document.getElementById('last-img').innerText = emoji;
+}
+
+function updateCartUI() {
+  localStorage.setItem('grinkers_cart', JSON.stringify(cart));
+  if (cart.length === 0) {
+    cartEl.innerHTML = `
+      <div style="text-align: center; color: var(--md-sys-color-outline); padding: 64px 0; display:flex; flex-direction:column; align-items:center; gap:16px;">
+         <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.5;">inventory_2</span>
+         <p>Cart is empty</p>
+      </div>`;
+    totalEl.innerText = `$0.00`;
+    countEl.innerText = `0 items`;
+    btnCheckout.disabled = true;
+  } else {
+    cartEl.innerHTML = '';
+    let total = 0;
+    cart.forEach(item => {
+      total += item.price;
+      const el = document.createElement('div');
+      el.className = 'cart-item';
+      el.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="font-size: 32px; width: 48px; text-align:center;">${item.emoji || '📦'}</div>
+          <div>
+            <h4 style="margin:0; font-size: 1.25rem;">${item.name}</h4>
+          </div>
+        </div>
+        <div style="font-weight: 700; font-size: 1.25rem;">$${item.price.toFixed(2)}</div>
+      `;
+      cartEl.appendChild(el);
+    });
+    totalEl.innerText = `$${total.toFixed(2)}`;
+    countEl.innerText = `${cart.length} items`;
+    btnCheckout.disabled = false;
+    cartEl.scrollTop = cartEl.scrollHeight;
+  }
+  
+  // Sync to mobile
+  if (currentConnection) {
+     currentConnection.send({ type: 'cart_sync', cart: cart });
+  }
+}
+
+function handleQuaggaScan(result) {
+    const decodedText = result.codeResult.code;
+    if (decodedText.length < 6) return; 
+    
+    if (!window.lastScanTime || Date.now() - window.lastScanTime > 2000) {
+      handleProductScan(decodedText);
+      window.lastScanTime = Date.now();
+    }
+}
+
+function startScannerEngine() {
+  const readerDiv = document.getElementById('reader');
+  readerDiv.innerHTML = ''; 
+  // Keep div rendered in DOM (display:block) so Quagga video plays, but hide it visually via opacity
+  readerDiv.style.display = 'block';
+  readerDiv.style.opacity = cameraActive ? '1' : '0';
+  
+  Quagga.init({
+    inputStream: {
+      name: "Live",
+      type: "LiveStream",
+      target: readerDiv,
+      constraints: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: "environment" }
+    },
+    decoder: { readers: ["code_128_reader"] },
+    locate: true
+  }, function(err) {
+      if (err) return console.error(err);
+      Quagga.start();
+      
+      const video = readerDiv.querySelector('video');
+      if(video) {
+         video.style.width = '100%';
+         video.style.height = '100%';
+         video.style.objectFit = 'cover';
+         video.style.borderRadius = 'var(--shape-large)';
+      }
+      const canvas = readerDiv.querySelector('canvas.drawingBuffer');
+      if(canvas) canvas.style.display = 'none';
+  });
+  
+  Quagga.onDetected(handleQuaggaScan);
+}
+
+function toggleCamera() {
+  const readerDiv = document.getElementById('reader');
+  const displayDiv = document.getElementById('scanned-item-display');
+  
+  if (cameraActive) {
+    // Just visually hide the feed, don't stop the engine
+    readerDiv.style.opacity = '0';
+    displayDiv.style.display = 'flex';
+    cameraActive = false;
+  } else {
+    // Visually show the feed
+    readerDiv.style.opacity = '1';
+    displayDiv.style.display = 'none';
+    cameraActive = true;
+  }
+}
+
+btnCheckout.addEventListener('click', processCheckout);
+
+function processCheckout() {
+  if (cart.length === 0) return;
+  
+  checkoutView.classList.remove('active');
+  successView.classList.add('active');
+  
+  if (currentConnection) {
+    currentConnection.send({ type: 'payment_complete' });
+  }
+
+  cart = []; 
+  updateCartUI();
+  
+  // Power down scanner while in Welcome/Success modes
+  Quagga.stop();
+  Quagga.offDetected(handleQuaggaScan);
+  cameraActive = false;
+  document.getElementById('reader').style.opacity = '0';
+  document.getElementById('scanned-item-display').style.display = 'flex';
+  
+  if(successTimeout) clearTimeout(successTimeout);
+  successTimeout = setTimeout(() => {
+    successView.classList.remove('active');
+    welcomeView.classList.add('active');
+  }, 10000);
+}
+
+initPeer();
+
+</script>
+</body>
+</html>
