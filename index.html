@@ -1,104 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Virtual Checkout Launcher</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Virtual Checkout Launcher</title>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
 
-    :root {
-      --md-sys-color-primary: #81C784;
-      --md-sys-color-on-primary: #003314;
-      --md-sys-color-primary-container: #005024;
-      --md-sys-color-on-primary-container: #A3F9A6;
+:root {
+  --md-sys-color-primary: #81C784;
+  --md-sys-color-on-primary: #003314;
+  --md-sys-color-background: #0D1610;
+  --md-sys-color-on-background: #E1E3DF;
+}
 
-      --md-sys-color-secondary: #A5D6A7;
-      --md-sys-color-on-secondary: #0D3915;
-      --md-sys-color-secondary-container: #25502A;
-      --md-sys-color-on-secondary-container: #C0F3C1;
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-      --md-sys-color-background: #0D1610;
-      --md-sys-color-on-background: #E1E3DF;
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
 
-      --md-sys-color-surface: #101B13;
-      --md-sys-color-on-surface: #E1E3DF;
-      --md-sys-color-surface-variant: #414942;
-      --md-sys-color-on-surface-variant: #C1C9BF;
+.panel {
+  width: min(900px, 100%);
+  padding: 40px;
+  border-radius: 28px;
+  background: rgba(16,27,19,0.86);
+}
 
-      --md-sys-color-outline: #8B938A;
-      --shape-extra-large: 36px;
-    }
+h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  color: var(--md-sys-color-primary);
+}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+.subtitle {
+  margin-top: 12px;
+  opacity: 0.8;
+}
 
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--md-sys-color-background);
-      color: var(--md-sys-color-on-background);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
+.button-row {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-    .shell {
-      width: min(1100px, 100%);
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 24px;
-    }
+.button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-weight: 700;
+}
 
-    .panel {
-      background: rgba(16, 27, 19, 0.86);
-      border-radius: var(--shape-extra-large);
-      padding: 24px;
-    }
+.primary { background: #81C784; color: #003314; }
+.tonal { background: #25502A; color: #C0F3C1; }
 
-    .hero h1 {
-      font-size: 2.5rem;
-      margin-top: 16px;
-    }
+.marquee {
+  margin-top: 30px;
+  overflow: hidden;
+}
 
-    .button-row {
-      margin-top: 20px;
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+.track {
+  display: flex;
+  gap: 16px;
+  animation: scroll 25s linear infinite;
+}
 
-    .button {
-      border: none;
-      border-radius: 999px;
-      padding: 12px 16px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      font-weight: 700;
-    }
+@keyframes scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
 
-    .primary { background: #81C784; color: #003314; }
-    .tonal { background: #25502A; color: #C0F3C1; }
-    .ghost { background: rgba(255,255,255,0.05); color: white; }
+.item {
+  font-size: 2.5rem;
+  background: rgba(255,255,255,0.05);
+  padding: 14px;
+  border-radius: 16px;
+}
 
-    .launch-card {
-      display: grid;
-      grid-template-columns: 60px 1fr auto;
-      gap: 12px;
-      padding: 16px;
-      border-radius: 24px;
-      background: rgba(255,255,255,0.03);
-      text-decoration: none;
-      color: inherit;
-      margin-bottom: 12px;
-    }
+</style>
+</head>
 
-    .icon-bubble {
+<body>
+  <main class="panel">
+    <h1>Pick a page and jump in.</h1>
+    <p class="subtitle">Use this as the front page for your checkout setup.</p>
+
+    <div class="button-row">
+      <a class="button primary" href="scanner.html">
+        <span class="material-symbols-outlined">qr_code_scanner</span>
+        Checkout
+      </a>
+
+      <a class="button tonal" href="mobile.html">
+        <span class="material-symbols-outlined">phone_android</span>
+        Mobile companion
+      </a>
+    </div>
+
+    <div class="marquee">
+      <div class="track" id="track"></div>
+    </div>
+  </main>
+
+<script>
+const emojis = ['🍎','🥖','🥑','🧀','🥩','🥦','🥪','🥐','🍉','🍣','🍔','🍕','🌮','🍩','🥨','🥫','🍗','🍙','🍿','🥓'];
+
+const track = document.getElementById('track');
+
+// duplicate for seamless loop
+const content = [...emojis, ...emojis]
+  .map(e => `<div class="item">${e}</div>`)
+  .join('');
+
+track.innerHTML = content;
+</script>
+
+</body>
+</html>    .icon-bubble {
       display: flex;
       align-items: center;
       justify-content: center;
